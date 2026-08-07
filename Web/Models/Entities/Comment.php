@@ -165,7 +165,17 @@ class Comment extends Post
         $res->owner_id = $this->getOwner()->getId();
         $res->date     = $this->getPublicationTime()->timestamp();
         $res->text     = $this->getText(false);
-        $res->post     = null; # todo
+        $res->post     = null;
+
+        if ($this->getTarget() instanceof Post) {
+            $res->post = $this->getTarget()->toNotifApiStruct();
+        } elseif ($this->getTarget() instanceof Photo) {
+            $res->photo = $this->getTarget()->toNotifApiStruct();
+        } elseif ($this->getTarget() instanceof Video) {
+            $res->video = $this->getTarget()->toNotifApiStruct();
+        } elseif ($this->getTarget() instanceof Note) {
+            $res->note = $this->getTarget()->toVkApiStruct();
+        }
 
         return $res;
     }

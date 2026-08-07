@@ -131,6 +131,36 @@ class Notification
         return true;
     }
 
+    private function buildCommentFeedback(): object
+    {
+        $from = $this->getActionCode() === 4 ? $this->getModel(0) : $this->getModel(1);
+        $res  = (object) [
+            "id"       => 0,
+            "from_id"  => $from ? $from->getId() : 0,
+            "date"     => $this->getDateTime()->timestamp(),
+            "text"     => $this->getData(),
+        ];
+
+        if ($this->getModel(0) && method_exists($this->getModel(0), "getOwner")) {
+            $res->owner_id = $this->getModel(0)->getOwner()->getId();
+        }
+
+        return $res;
+    }
+
+    private function buildCopyFeedback(): array
+    {
+        $from = $this->getModel(1);
+
+        return [(object) [
+            "id"      => $this->getModel(0)?->getId() ?? 0,
+            "from_id" => $from ? $from->getId() : 0,
+            "owner_id" => $from ? $from->getId() : 0,
+            "date"    => $this->getDateTime()->timestamp(),
+            "text"    => "",
+        ]];
+    }
+
     public function getVkApiInfo()
     {
         $origin_m = $this->encodeType($this->originModel);
@@ -151,34 +181,35 @@ class Notification
             case 1:
                 $info["type"]     = "copy_post";
                 $info["parent"]   = $this->getModel(0)->toNotifApiStruct();
-                $info["feedback"] = null;
+                $info["feedback"] = $this->buildCopyFeedback();
                 break;
             case 2:
                 switch ($origin_m) {
                     case 19:
                         $info["type"] = "comment_video";
                         $info["parent"] = $this->getModel(0)->toNotifApiStruct();
-                        $info["feedback"] = null; # comment id is not saving at db
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 13:
                         $info["type"] = "comment_photo";
                         $info["parent"] = $this->getModel(0)->toNotifApiStruct();
-                        $info["feedback"] = null;
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 10:
                         $info["type"] = "comment_note";
                         $info["parent"] = $this->getModel(0)->toVkApiStruct();
-                        $info["feedback"] = null;
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 14:
                         $info["type"] = "comment_post";
                         $info["parent"] = $this->getModel(0)->toNotifApiStruct();
-                        $info["feedback"] = $this->getModel(1)->toVkApiStruct();
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                         # unused (users don't have topics bruh)
                     case 21:
                         $info["type"] = "comment_topic";
                         $info["parent"] = $this->getModel(0)->toVkApiStruct(0, 90);
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     default:
                         $info["type"] = "comment_unknown";
@@ -199,18 +230,22 @@ class Notification
                     case 19:
                         $info["type"]   = "mention_comment_video";
                         $info["parent"] = $this->getModel(1)->toNotifApiStruct();
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 13:
                         $info["type"] = "mention_comment_photo";
                         $info["parent"] = $this->getModel(1)->toNotifApiStruct();
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                         # unstandart
                     case 10:
                         $info["type"] = "mention_comment_note";
                         $info["parent"] = $this->getModel(1)->toVkApiStruct();
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 21:
                         $info["type"] = "mention_comments";
+                        $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     default:
                         $info["type"] = "mention_comment_unknown";
@@ -220,14 +255,17 @@ class Notification
             case 5:
                 $info["type"]   = "make_you_admin";
                 $info["parent"] = $this->getModel(0)->toVkApiStruct($this->getModel(1));
+                $info["feedback"] = $this->getModel(1)->toVkApiStruct($this->getModel(0));
                 break;
                 # Нужно доделать после мержа #935
             case 6:
                 $info["type"] = "wall_publish";
+                $info["feedback"] = $this->getModel(0)->toNotifApiStruct();
                 break;
                 # В вк не было такого уведомления, так что unstandart
             case 7:
                 $info["type"] = "new_posts_in_club";
+                $info["feedback"] = $this->getModel(1)->toVkApiStruct($this->getModel(0));
                 break;
                 # В вк при передаче подарков приходит сообщение, а не уведомление, так что unstandart
             case 9601:
@@ -237,11 +275,12 @@ class Notification
             case 9602:
                 $info["type"] = "voices_transfer";
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
+                $info["parent"]->count = (int) preg_replace('/\s.*$/', '', (string) $this->getData());
                 break;
             case 9603:
                 $info["type"] = "up_rating";
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
-                $info["parent"]->count = $this->getData();
+                $info["parent"]->count = (int) preg_replace('/\s.*$/', '', (string) $this->getData());
                 break;
             default:
                 $info["type"] = null;
