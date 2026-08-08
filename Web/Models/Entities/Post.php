@@ -414,8 +414,8 @@ class Post extends Postable
         $res->text    = $this->getText(false);
         $res->attachments = []; # todo
 
-        $res->copy_owner_id = null; # todo
-        $res->copy_post_id  = null; # todo
+        $res->copy_owner_id = $this->getOwner(false)->getRealId();
+        $res->copy_post_id  = $this->getVirtualId();
 
         return $res;
     }

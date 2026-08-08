@@ -148,17 +148,17 @@ class Notification
         return $res;
     }
 
-    private function buildCopyFeedback(): array
+    private function buildCopyFeedback(): object
     {
         $from = $this->getModel(1);
 
-        return [(object) [
-            "id"      => $this->getModel(0)?->getId() ?? 0,
-            "from_id" => $from ? $from->getId() : 0,
+        return (object) [
+            "id"       => $this->getModel(0)?->getId() ?? 0,
+            "from_id"  => $from ? $from->getId() : 0,
             "owner_id" => $from ? $from->getId() : 0,
-            "date"    => $this->getDateTime()->timestamp(),
-            "text"    => "",
-        ]];
+            "date"     => $this->getDateTime()->timestamp(),
+            "text"     => $this->getData() ?: $this->getModel(0)?->getText(false) ?: "",
+        ];
     }
 
     public function getVkApiInfo()
@@ -255,7 +255,7 @@ class Notification
             case 5:
                 $info["type"]   = "make_you_admin";
                 $info["parent"] = $this->getModel(0)->toVkApiStruct($this->getModel(1));
-                $info["feedback"] = $this->getModel(1)->toVkApiStruct($this->getModel(0));
+                $info["feedback"] = $this->getModel(1)->toVkApiStruct();
                 break;
                 # Нужно доделать после мержа #935
             case 6:
@@ -276,11 +276,19 @@ class Notification
                 $info["type"] = "voices_transfer";
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
                 $info["parent"]->count = (int) preg_replace('/\s.*$/', '', (string) $this->getData());
+                $info["feedback"] = (object) [
+                    "text" => $this->getData(),
+                    "from_id" => $this->getModel(1)?->getId() ?? 0,
+                ];
                 break;
             case 9603:
                 $info["type"] = "up_rating";
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
                 $info["parent"]->count = (int) preg_replace('/\s.*$/', '', (string) $this->getData());
+                $info["feedback"] = (object) [
+                    "text" => $this->getData(),
+                    "from_id" => $this->getModel(1)?->getId() ?? 0,
+                ];
                 break;
             default:
                 $info["type"] = null;

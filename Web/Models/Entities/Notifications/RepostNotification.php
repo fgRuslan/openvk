@@ -13,6 +13,6 @@ final class RepostNotification extends Notification
 
     public function __construct(User $recipient, Post $post, User $reposter)
     {
-        parent::__construct($recipient, $post, $reposter, time(), "");
+        parent::__construct($recipient, $post, $reposter, time(), ovk_proc_strtr(strip_tags($post->getText()), 400));
     }
 }
