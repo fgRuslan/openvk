@@ -277,7 +277,7 @@ class Notification
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
                 $info["parent"]->count = (int) preg_replace('/\s.*$/', '', (string) $this->getData());
                 $info["feedback"] = (object) [
-                    "text" => $this->getData(),
+                    "text" => preg_replace('/^\d+\s+/', '', (string) $this->getData()),
                     "from_id" => $this->getModel(1)?->getId() ?? 0,
                 ];
                 break;
@@ -286,7 +286,7 @@ class Notification
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
                 $info["parent"]->count = (int) preg_replace('/\s.*$/', '', (string) $this->getData());
                 $info["feedback"] = (object) [
-                    "text" => $this->getData(),
+                    "text" => preg_replace('/^\d+\s+/', '', (string) $this->getData()),
                     "from_id" => $this->getModel(1)?->getId() ?? 0,
                 ];
                 break;
