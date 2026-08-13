@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace openvk\Web\Models\Entities;
 
-use openvk\Web\Models\Repositories\Clubs;
+use openvk\Web\Models\Repositories\{Clubs, Comments};
 use openvk\Web\Models\RowModel;
 use openvk\Web\Models\Entities\{Note};
 
@@ -79,6 +79,10 @@ class Comment extends Post
         $res->attachments   = [];
         $res->parents_stack = [];
 
+        if ($this->getReplyToId() !== null) {
+            $res->reply_to_comment = $this->getReplyToId();
+        }
+
         if (get_class($this->getTarget()) === 'openvk\Web\Models\Entities\Note') {
             $res->message       = $this->getText(false);
         } else {
@@ -106,14 +110,7 @@ class Comment extends Post
                     ];
                 }
             } elseif ($attachment instanceof \openvk\Web\Models\Entities\Video) {
-                if (VKAPI_DECL_VER_MAJOR <= 4) {
-                    $res->attachments[] = $attachment->toVkApiStruct($this->getUser());
-                } else {
-                    $res->attachments[] = [
-                        'type' => 'video',
-                        'video' => $attachment->toVkApiStruct($this->getUser()),
-                    ];
-                }
+                $res->attachments[] = $attachment->toVkApiStruct($user);
             }
         }
 
@@ -157,7 +154,7 @@ class Comment extends Post
         return false;
     }
 
-    public function toNotifApiStruct()
+    public function toNotifApiStruct(bool $without_parent = false)
     {
         $res = (object) [];
 
@@ -165,16 +162,18 @@ class Comment extends Post
         $res->owner_id = $this->getOwner()->getId();
         $res->date     = $this->getPublicationTime()->timestamp();
         $res->text     = $this->getText(false);
-        $res->post     = null;
-
-        if ($this->getTarget() instanceof Post) {
-            $res->post = $this->getTarget()->toNotifApiStruct();
-        } elseif ($this->getTarget() instanceof Photo) {
-            $res->photo = $this->getTarget()->toNotifApiStruct();
-        } elseif ($this->getTarget() instanceof Video) {
-            $res->video = $this->getTarget()->toNotifApiStruct();
-        } elseif ($this->getTarget() instanceof Note) {
-            $res->note = $this->getTarget()->toVkApiStruct();
+        if (!$without_parent) {
+            switch (get_class($this->getTarget())) {
+                case 'openvk\Web\Models\Entities\Post':
+                    $res->post     = $this->getTarget()->toNotifApiStruct();
+                    break;
+                case 'openvk\Web\Models\Entities\Photo':
+                    $res->photo    = $this->getTarget()->toNotifApiStruct();
+                    break;
+                case 'openvk\Web\Models\Entities\Video':
+                    $res->video    = $this->getTarget()->toNotifApiStruct();
+                    break;
+            }
         }
 
         return $res;
@@ -214,5 +213,15 @@ class Comment extends Post
         }
 
         return $target_name . $target->getPrettyId();
+    }
+
+    public function getReplyToId(): ?int
+    {
+        return $this->getRecord()->reply_to;
+    }
+
+    public function getReplyToComment(): ?Comment
+    {
+        return $this->getReplyToId() !== null ? (new Comments())->get($this->getReplyToId()) : null;
     }
 }
