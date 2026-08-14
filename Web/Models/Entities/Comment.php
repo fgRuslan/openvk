@@ -173,6 +173,9 @@ class Comment extends Post
                 case 'openvk\Web\Models\Entities\Video':
                     $res->video    = $this->getTarget()->toNotifApiStruct();
                     break;
+                case 'openvk\Web\Models\Entities\Note':
+                    $res->note     = $this->getTarget()->toVkApiStruct();
+                    break;
             }
         }
 
