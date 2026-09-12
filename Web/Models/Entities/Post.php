@@ -407,7 +407,7 @@ class Post extends Postable
         return "/wall" . $this->getPrettyId();
     }
 
-    public function toNotifApiStruct()
+    public function toNotifApiStruct(?int $copy_owner_id = null, ?int $copy_post_id = null)
     {
         $res = (object) [];
 
@@ -418,8 +418,8 @@ class Post extends Postable
         $res->text    = $this->getText(false);
         $res->attachments = []; # todo
 
-        $res->copy_owner_id = $this->getOwner(false)->getRealId();
-        $res->copy_post_id  = $this->getVirtualId();
+        $res->copy_owner_id = $copy_owner_id;
+        $res->copy_post_id  = $copy_post_id;
 
         return $res;
     }

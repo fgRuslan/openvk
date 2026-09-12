@@ -133,6 +133,10 @@ class Notification
 
     private function buildCommentFeedback(): object
     {
+        if ($this->getModel(0) instanceof \openvk\Web\Models\Entities\Comment) {
+            return $this->getModel(0)->toNotifApiStruct(true);
+        }
+
         $from = $this->getActionCode() === 4 ? $this->getModel(0) : $this->getModel(1);
         $res  = (object) [
             "id"       => 0,
@@ -151,13 +155,15 @@ class Notification
     private function buildCopyFeedback(): object
     {
         $from = $this->getModel(1);
+        $payload = json_decode($this->getData(), true);
+        $payload = is_array($payload) ? $payload : [];
 
         return (object) [
-            "id"       => $this->getModel(0)?->getId() ?? 0,
+            "id"       => $payload["id"] ?? 0,
+            "to_id"    => $payload["owner_id"] ?? 0,
             "from_id"  => $from ? $from->getId() : 0,
-            "owner_id" => $from ? $from->getId() : 0,
             "date"     => $this->getDateTime()->timestamp(),
-            "text"     => $this->getData() ?: $this->getModel(0)?->getText(false) ?: "",
+            "text"     => $payload["text"] ?? ($this->getData() ?: $this->getModel(0)?->getText(false) ?: ""),
         ];
     }
 
@@ -174,41 +180,55 @@ class Notification
 
         switch ($this->getActionCode()) {
             case 0:
-                $info["type"]     = "like_post";
+                $info["type"]     = $origin_m === 6 ? "like_comment" : "like_post";
                 $info["parent"]   = $this->getModel(0)->toNotifApiStruct();
                 $info["feedback"] = $this->toFeedbackStruct();
                 break;
             case 1:
                 $info["type"]     = "copy_post";
-                $info["parent"]   = $this->getModel(0)->toNotifApiStruct();
+                $info["parent"]   = $this->getModel(0)->toNotifApiStruct(
+                    $this->getModel(0)->getOwner(false)->getRealId(),
+                    $this->getModel(0)->getVirtualId()
+                );
                 $info["feedback"] = $this->buildCopyFeedback();
                 break;
             case 2:
-                switch ($origin_m) {
+                $commentTarget = $origin_m === 6 ? $target_m : $origin_m;
+                switch ($commentTarget) {
                     case 19:
                         $info["type"] = "comment_video";
-                        $info["parent"] = $this->getModel(0)->toNotifApiStruct();
+                        $info["parent"] = $origin_m === 6
+                            ? $this->getModel(1)->toNotifApiStruct()
+                            : $this->getModel(0)->toNotifApiStruct();
                         $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 13:
                         $info["type"] = "comment_photo";
-                        $info["parent"] = $this->getModel(0)->toNotifApiStruct();
+                        $info["parent"] = $origin_m === 6
+                            ? $this->getModel(1)->toNotifApiStruct()
+                            : $this->getModel(0)->toNotifApiStruct();
                         $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 10:
                         $info["type"] = "comment_note";
-                        $info["parent"] = $this->getModel(0)->toVkApiStruct();
+                        $info["parent"] = $origin_m === 6
+                            ? $this->getModel(1)->toVkApiStruct()
+                            : $this->getModel(0)->toVkApiStruct();
                         $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     case 14:
                         $info["type"] = "comment_post";
-                        $info["parent"] = $this->getModel(0)->toNotifApiStruct();
+                        $info["parent"] = $origin_m === 6
+                            ? $this->getModel(1)->toNotifApiStruct()
+                            : $this->getModel(0)->toNotifApiStruct();
                         $info["feedback"] = $this->buildCommentFeedback();
                         break;
                         # unused (users don't have topics bruh)
                     case 21:
                         $info["type"] = "comment_topic";
-                        $info["parent"] = $this->getModel(0)->toVkApiStruct(0, 90);
+                        $info["parent"] = $origin_m === 6
+                            ? $this->getModel(1)->toVkApiStruct(0, 90)
+                            : $this->getModel(0)->toVkApiStruct(0, 90);
                         $info["feedback"] = $this->buildCommentFeedback();
                         break;
                     default:
@@ -222,6 +242,36 @@ class Notification
                 $info["feedback"] = $this->getModel(0)->toNotifApiStruct();
                 break;
             case 4:
+                if ($origin_m === 6) {
+                    switch ($target_m) {
+                        case 14:
+                            $info["type"] = "mention_comments";
+                            $info["parent"] = $this->getModel(1)->toNotifApiStruct();
+                            $info["feedback"] = $this->buildCommentFeedback();
+                            break 2;
+                        case 19:
+                            $info["type"] = "mention_comment_video";
+                            $info["parent"] = $this->getModel(1)->toNotifApiStruct();
+                            $info["feedback"] = $this->buildCommentFeedback();
+                            break 2;
+                        case 13:
+                            $info["type"] = "mention_comment_photo";
+                            $info["parent"] = $this->getModel(1)->toNotifApiStruct();
+                            $info["feedback"] = $this->buildCommentFeedback();
+                            break 2;
+                        case 10:
+                            $info["type"] = "mention_comment_note";
+                            $info["parent"] = $this->getModel(1)->toVkApiStruct();
+                            $info["feedback"] = $this->buildCommentFeedback();
+                            break 2;
+                        case 21:
+                            $info["type"] = "mention_comments";
+                            $info["parent"] = $this->getModel(1)->toVkApiStruct(0, 90);
+                            $info["feedback"] = $this->buildCommentFeedback();
+                            break 2;
+                    }
+                }
+
                 switch ($target_m) {
                     case 14:
                         $info["type"] = "mention";

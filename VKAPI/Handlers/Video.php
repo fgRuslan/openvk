@@ -141,6 +141,35 @@ final class Video extends VKAPIRequestHandler
         }
     }
 
+    public function getComments(int $owner_id, int $video_id, bool $need_likes = false, int $offset = 0, int $count = 100, bool $extended = false, string $fields = "")
+    {
+        $this->requireUser();
+
+        $video = (new VideosRepo())->getByOwnerAndVID($owner_id, $video_id);
+        if (!$video || $video->isDeleted() || !$video->canBeViewedBy($this->getUser())) {
+            $this->fail(15, "Access denied");
+        }
+
+        $comments = array_slice(iterator_to_array($video->getComments(1, $offset + $count)), $offset);
+        $res = [
+            "count" => $video->getCommentsCount(),
+            "items" => [],
+        ];
+
+        if ($extended) {
+            $res["profiles"] = [];
+        }
+
+        foreach ($comments as $comment) {
+            $res["items"][] = $comment->toVkApiStruct($this->getUser(), $need_likes, $extended);
+            if ($extended && $comment->getOwner() instanceof User) {
+                $res["profiles"][] = $comment->getOwner()->toVkApiStruct($this->getUser(), $fields);
+            }
+        }
+
+        return $res;
+    }
+
     public function search(string $q = '', int $sort = 0, int $offset = 0, int $count = 10, bool $extended = false, string $fields = ''): object
     {
         $this->requireUser();

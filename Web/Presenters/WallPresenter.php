@@ -490,6 +490,27 @@ final class WallPresenter extends OpenVKPresenter
             $post->attach($poll);
         }
 
+        if ($should_be_suggested) {
+            $recipients = [$wallOwner->getOwner()->getId() => $wallOwner->getOwner()];
+            for ($managerPage = 1; ; $managerPage++) {
+                $managers = iterator_to_array($wallOwner->getManagers($managerPage));
+                foreach ($managers as $manager) {
+                    $managerUser = $manager->getUser();
+                    if ($managerUser) {
+                        $recipients[$managerUser->getId()] = $managerUser;
+                    }
+                }
+
+                if (count($managers) < 6) {
+                    break;
+                }
+            }
+
+            foreach ($recipients as $recipient) {
+                (new NewSuggestedPostsNotification($recipient, $wallOwner))->emit();
+            }
+        }
+
         if ($wall > 0 && $wall !== $this->user->identity->getId()) {
             $disturber = $this->user->identity;
             if ($anon) {
@@ -647,7 +668,7 @@ final class WallPresenter extends OpenVKPresenter
             $nPost->attach($post);
 
             if ($post->getOwner(false)->getId() !== $this->user->identity->getId() && !($post->getOwner() instanceof Club)) {
-                (new RepostNotification($post->getOwner(false), $post, $this->user->identity))->emit();
+                (new RepostNotification($post->getOwner(false), $post, $this->user->identity, $nPost))->emit();
             }
         };
 
