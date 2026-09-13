@@ -839,7 +839,7 @@ final class Wall extends VKAPIRequestHandler
         }
 
         if ($repost_type == 'wall' && $repost_entity->getOwner(false)->getId() !== $this->user->getId() && !($repost_entity->getOwner() instanceof Club)) {
-            (new RepostNotification($repost_entity->getOwner(false), $repost_entity, $this->user))->emit();
+            (new RepostNotification($repost_entity->getOwner(false), $repost_entity, $this->user, $nPost))->emit();
         }
 
         $repost_count = 1;

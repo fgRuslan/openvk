@@ -134,7 +134,7 @@ class Notification
     private function buildCommentFeedback(): object
     {
         if ($this->getModel(0) instanceof \openvk\Web\Models\Entities\Comment) {
-            return $this->getModel(0)->toNotifApiStruct(true);
+            return $this->getModel(0)->toNotifApiStructWithoutParent();
         }
 
         $from = $this->getActionCode() === 4 ? $this->getModel(0) : $this->getModel(1);
@@ -334,7 +334,7 @@ class Notification
                         break;
                 }
                 $info["parent"] = $this->getModel(0)->getReplyToComment()->toNotifApiStruct();
-                $info["feedback"] = $this->getModel(0)->toNotifApiStruct(true);
+                $info["feedback"] = $this->getModel(0)->toNotifApiStructWithoutParent();
                 break;
             case 9601:
                 $info["type"]   = "sent_gift";

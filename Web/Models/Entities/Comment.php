@@ -154,7 +154,17 @@ class Comment extends Post
         return false;
     }
 
-    public function toNotifApiStruct(bool $without_parent = false)
+    public function toNotifApiStruct(?int $copy_owner_id = null, ?int $copy_post_id = null)
+    {
+        return $this->buildNotifApiStruct(false);
+    }
+
+    public function toNotifApiStructWithoutParent(): object
+    {
+        return $this->buildNotifApiStruct(true);
+    }
+
+    private function buildNotifApiStruct(bool $without_parent): object
     {
         $res = (object) [];
 
