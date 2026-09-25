@@ -316,7 +316,6 @@ class Notification
                 $info["type"] = "new_posts_in_club";
                 $info["feedback"] = $this->getModel(1)->toVkApiStruct($this->getModel(0));
                 break;
-                # В вк при передаче подарков приходит сообщение, а не уведомление, так что unstandart
             case 8:
                 switch ($this->encodeType($this->getModel(0)->getTarget())) {
                     case 14:
@@ -335,6 +334,7 @@ class Notification
                 $info["parent"] = $this->getModel(0)->getReplyToComment()->toNotifApiStruct();
                 $info["feedback"] = $this->getModel(0)->toNotifApiStructWithoutParent();
                 break;
+            # В вк при передаче подарков приходит сообщение, а не уведомление, так что unstandart
             case 9601:
                 $info["type"]   = "sent_gift";
                 $info["parent"] = $this->getModel(1)->toVkApiStruct($this->getModel(1));
