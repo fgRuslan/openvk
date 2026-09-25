@@ -1,0 +1,9 @@
+{var $comment = $notification->getModel(0)}
+{var $user = $comment->getOwner()}
+{var $topic = $notification->getModel(1)}
+
+<a href="{$user->getURL()}"><b>{$user->getCanonicalName()}</b></a>
+{_nt_commented_yours} {_nt_yours_adjective} <a href="/topic{$topic->getPrettyId()}">{_nt_topic_instrumental}</a>: "{$notification->getData()}".
+<div class="nobold">
+    {$notification->getDateTime()}
+</div>

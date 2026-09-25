@@ -1,0 +1,9 @@
+{var $comment = $notification->getModel(0)}
+{var $user = $comment->getOwner()}
+{var $video = $notification->getModel(1)}
+
+<a href="{$user->getURL()}"><b>{$user->getCanonicalName()}</b></a>
+{_nt_commented_yours} {_nt_yours_adjective} <a href="/video{$video->getPrettyId()}">{_video}</a>: "{$notification->getData()}".
+<div class="nobold">
+    {$notification->getDateTime()}
+</div>
