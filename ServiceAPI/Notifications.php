@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace openvk\ServiceAPI;
 
 use Latte\Engine as TemplatingEngine;
+use openvk\Web\Models\Entities\Comment;
 use openvk\Web\Models\Entities\User;
 use openvk\Web\Models\Repositories\{Notifications as N};
 use openvk\Web\Util\NotificationBroker;
@@ -73,14 +74,24 @@ class Notifications implements Handler
             $latte->setTempDirectory(CHANDLER_ROOT . "/tmp/cache/templates");
             $latte->addExtension(new \Latte\Essential\TranslatorExtension(tr(...)));
 
-            $session->set("notifs_cursor", $newCursor);
-
             $userModel = $notification->getModel(1);
+            if (!method_exists($userModel, "getAvatarUrl")) {
+                $userModel = $notification->getModel(0);
+            }
+
+            if ($userModel instanceof Comment) {
+                $userModel = $userModel->getOwner();
+            }
+
+            $body = trim(preg_replace('%(\s){2,}%', "$1", $latte->renderToString($tplId, ["notification" => $notification])));
+            $avatar = $userModel->getAvatarUrl();
+
+            $session->set("notifs_cursor", $newCursor);
 
             $resolve([
                 "title"    => tr("notif_" . $payload->actionCode . "_" . $payload->originModelType . "_" . $payload->targetModelType),
-                "body"     => trim(preg_replace('%(\s){2,}%', "$1", $latte->renderToString($tplId, ["notification" => $notification]))),
-                "ava"      => $userModel->getAvatarUrl(),
+                "body"     => $body,
+                "ava"      => $avatar,
                 "priority" => 1,
             ]);
 
