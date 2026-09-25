@@ -29,6 +29,9 @@
                 {if !(method_exists($sxModel, "getURL") && method_exists($sxModel, "getAvatarUrl"))}
                     {var $sxModel = $dat->getModel(0)}
                 {/if}
+                {if method_exists($sxModel, "getOwner")}
+                    {var $sxModel = $sxModel->getOwner()}
+                {/if}
 
                 <td width="54" valign="top">
                     <a href="{$sxModel->getURL()}">

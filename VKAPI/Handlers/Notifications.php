@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace openvk\VKAPI\Handlers;
 
 use openvk\Web\Models\Entities\Club;
+use openvk\Web\Models\Entities\Comment;
 use openvk\Web\Models\Repositories\{Notifications as Notifs, Clubs, Users};
 use openvk\Web\Util\NotificationBroker;
 
@@ -44,6 +45,10 @@ final class Notifications extends VKAPIRequestHandler
 
             if (!method_exists($sxModel, "getAvatarUrl")) {
                 $sxModel = $notif->getModel(0);
+            }
+
+            if ($sxModel instanceof Comment) {
+                $sxModel = $sxModel->getOwner();
             }
 
             $tmpProfiles[] = $sxModel instanceof Club ? $sxModel->getId() * -1 : $sxModel->getId();

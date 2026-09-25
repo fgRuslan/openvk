@@ -307,7 +307,6 @@ class Notification
                 $info["parent"] = $this->getModel(0)->toVkApiStruct($this->getModel(1));
                 $info["feedback"] = $this->getModel(1)->toVkApiStruct();
                 break;
-                # Нужно доделать после мержа #935
             case 6:
                 $info["type"] = "wall_publish";
                 $info["feedback"] = $this->getModel(0)->toNotifApiStruct();
